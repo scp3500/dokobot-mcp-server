@@ -158,7 +158,17 @@ function rankCandidates(serpResults) {
     let s = item.score;
     if (item.engines >= 2) s += 0.5;     // 跨引擎共识
     if (AUTHORITY.test(u)) s += 0.3;     // 权威域名
-    try { if (new URL(u).pathname.length <= 1) s -= 0.25; } catch { /* 忽略 */ } // 裸域名首页降权
+
+    // 裸域名首页降权（官网首页通常内容少）
+    try {
+      const url = new URL(u);
+      if (url.pathname.length <= 1) s -= 0.6;  // 降权更多
+      // 论坛/问答/Wiki 页面加权
+      if (/\/(thread|topic|question|qa|wiki|discuss|forum|t\/)/.test(url.pathname)) s += 0.4;
+      // 博客/文章页面加权
+      if (/\/(post|article|blog|news|archives?)\//.test(url.pathname)) s += 0.3;
+    } catch { /* 忽略 */ }
+
     ranked.push({ url: u, score: s });
   }
   ranked.sort((a, b) => b.score - a.score);
