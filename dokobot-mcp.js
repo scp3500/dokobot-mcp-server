@@ -240,18 +240,32 @@ async function deepResearch(query, keywords, readPages) {
 
   const parts = [];
   for (const s of okSerps) parts.push(`【SERP·${s.eng}】${s.q.substring(0, 60)}\n${s.text.substring(0, 1500)}`);
-  results.forEach((r, i) => parts.push(`【正文${i + 1}】${r.url}\n${r.text}`));
+
+  // 明确标注成功读取的页面
+  if (results.length > 0) {
+    parts.push(`\n【成功读取 ${results.length} 个页面】`);
+    results.forEach((r, i) => parts.push(`【正文${i + 1}】${r.url}\n${r.text}`));
+  }
 
   // 结构化尾部：让模型自己决定要不要二轮
-  const tail = ['【过程】'];
-  serps.forEach(s => tail.push(`  搜索 ${s.eng} "${s.q.substring(0, 50)}" -> ${s.ok ? 'OK' : '失败:' + s.reason}`));
-  tried.forEach(t => tail.push(`  读取 ${t.url.substring(0, 70)} -> ${t.ok ? 'OK' : '失败:' + (t.reason || '内容过短')}`));
+  const tail = ['【执行过程总结】'];
+  serps.forEach(s => tail.push(`  搜索 ${s.eng} "${s.q.substring(0, 50)}" -> ${s.ok ? '✓ 成功' : '✗ 失败:' + s.reason}`));
+
+  const successCount = tried.filter(t => t.ok).length;
+  const failCount = tried.filter(t => !t.ok).length;
+  tail.push(`\n【页面读取统计】成功 ${successCount}/${tried.length}，失败 ${failCount}`);
+  tried.forEach(t => tail.push(`  ${t.ok ? '✓' : '✗'} ${t.url.substring(0, 70)} ${t.ok ? '' : '-> ' + (t.reason || '内容过短')}`));
+
   if (unread.length) {
-    tail.push('【候选未读，需要更多信息可用 read_url 继续】');
+    tail.push('\n【候选未读，需要更多信息可用 read_url 继续】');
     unread.slice(0, 5).forEach(u => tail.push(`  ${u}`));
   }
   const failedQs = serps.filter(s => !s.ok).map(s => s.q);
-  if (failedQs.length) tail.push(`【未覆盖角度（搜索失败，可换词重试）】${failedQs.map(q => q.substring(0, 40)).join(' | ')}`);
+  if (failedQs.length) tail.push(`\n【未覆盖角度（搜索失败，可换词重试）】${failedQs.map(q => q.substring(0, 40)).join(' | ')}`);
+
+  if (results.length === 0) {
+    tail.push('\n⚠️ 警告：本次搜索未成功读取任何页面内容，仅获得搜索结果页，请换词重试或读取【候选未读】');
+  }
 
   const body = parts.length ? parts.join('\n---\n') : '未搜到有效信息';
   const tailText = tail.join('\n');
@@ -266,11 +280,25 @@ async function quickSearch(args) {
   const serp = await searchWithFallback(query, args.engine);
   if (!serp.ok) return `【搜索失败】${serp.reason}，换关键词或稍后再试`;
   let out = `【SERP·${serp.eng}】\n${serp.text.substring(0, readN > 0 ? 2000 : maxChars)}`;
+
   if (readN > 0) {
     const candidates = rankCandidates([serp]);
-    const { results } = await readWithRefill(candidates, readN, { perPageChars: 4000 });
-    results.forEach((r, i) => { out += `\n\n【正文${i + 1}】${r.url}\n${r.text}`; });
+    const { results, tried } = await readWithRefill(candidates, readN, { perPageChars: 4000 });
+
+    if (results.length > 0) {
+      out += `\n\n【成功读取 ${results.length} 个页面】`;
+      results.forEach((r, i) => { out += `\n\n【正文${i + 1}】${r.url}\n${r.text}`; });
+    }
+
+    // 添加统计信息
+    const successCount = tried.filter(t => t.ok).length;
+    const failCount = tried.filter(t => !t.ok).length;
+    out += `\n\n【读取统计】成功 ${successCount}/${tried.length}，失败 ${failCount}`;
+    if (results.length === 0) {
+      out += '\n⚠️ 警告：未成功读取任何页面，仅获得搜索结果，建议换词重试';
+    }
   }
+
   return out.substring(0, maxChars);
 }
 
@@ -301,7 +329,11 @@ keywords 必传，每个元素是一个完整搜索串【15-30个词，多角度
 1. 交叉验证：至少2个独立来源一致才可采信；只有单一来源时明确说"仅单一来源"
 2. 来源冲突时优先官方/权威来源，并向用户说明存在分歧
 3. 信息不足、来源单一或【未覆盖角度】有失败项时，换关键词再调一次，或用 read_url 追读【候选未读】里的链接
-4. 注意信息时效，留意页面日期，旧消息别当新消息说`,
+4. 注意信息时效，留意页面日期，旧消息别当新消息说
+
+⚠️ 关键：返回内容末尾有【执行过程总结】和【页面读取统计】，显示了实际成功/失败的页面数。
+如果【成功读取 0 个页面】或统计显示全部失败，则你只有搜索结果页，没有实际内容，必须换词重试或声明信息不足。
+不要基于失败的搜索结果编造答案。`,
     inputSchema: { type: "object", properties: {
       query: { type: "string", description: "用户的原始问题" },
       keywords: { type: "array", items: { type: "string" }, description: "搜索串列表，3-8个，多角度中英分开" },
