@@ -108,6 +108,9 @@ async function fetchPage(url, label, { screens = 0, timeoutSec = 25 } = {}) {
 const AUTHORITY = /wikipedia\.org|baike\.baidu\.com|github\.com|stackoverflow\.com|zhihu\.com|moegirl\.org|biligame\.com|huijiwiki\.com|fandom\.com|linux\.do/;
 // 引擎的结果跳转链：浏览器打开会 302 到真实页面，必须保留
 const REDIRECT_LINK = /baidu\.com\/link\?url=|sogou\.com\/link\?url=|bing\.com\/ck\/a/;
+// 垃圾链接特征：广告、导航、登录等无内容价值的页面
+const JUNK_PATTERN = /\/(privacy|terms|about|contact|sitemap|rss|feed|tag\/|tags\/|category\/|author\/|page\/\d+|search\?|login|signin|signup|register|oauth|callback)/;
+const AD_DOMAIN = /doubleclick|googleads|adservice|adsystem|ad\d*\.|ads\./;
 function normalizeUrl(u) {
   // duckduckgo 的跳转链可以直接解出真实地址
   try {
@@ -126,8 +129,12 @@ function extractUrls(serpText) {
     let host;
     try { host = new URL(u).hostname; } catch { continue; }
     const isRedirect = REDIRECT_LINK.test(u);
+    // 跳过搜索引擎自己的链接
     if (ENGINE_HOSTS.test(host) && !isRedirect) continue;
-    if (!isRedirect && /\/search\?|\/web\?|\?wd=|translate\.|accounts\.|login|signin/.test(u)) continue;
+    // 跳过明显的垃圾链接
+    if (!isRedirect && JUNK_PATTERN.test(u)) continue;
+    // 跳过广告追踪链接
+    if (AD_DOMAIN.test(host)) continue;
     if (u.length < 15) continue;
     if (!seen.has(u)) seen.set(u, order++);
   }
