@@ -264,7 +264,7 @@ async function deepResearch(query, keywords, readPages) {
   if (failedQs.length) tail.push(`\n【未覆盖角度（搜索失败，可换词重试）】${failedQs.map(q => q.substring(0, 40)).join(' | ')}`);
 
   if (results.length === 0) {
-    tail.push('\n⚠ 警告：本次搜索未成功读取任何页面内容，仅获得搜索结果页，请换词重试或读取【候选未读】');
+    tail.push('\n【警告】本次搜索未成功读取任何页面内容，仅获得搜索结果页，请换词重试或读取【候选未读】');
   }
 
   const body = parts.length ? parts.join('\n---\n') : '未搜到有效信息';
@@ -295,7 +295,7 @@ async function quickSearch(args) {
     const failCount = tried.filter(t => !t.ok).length;
     out += `\n\n【读取统计】成功 ${successCount}/${tried.length}，失败 ${failCount}`;
     if (results.length === 0) {
-      out += '\n⚠ 警告：未成功读取任何页面，仅获得搜索结果，建议换词重试';
+      out += '\n【警告】未成功读取任何页面，仅获得搜索结果，建议换词重试';
     }
   }
 
@@ -331,7 +331,7 @@ keywords 必传，每个元素是一个完整搜索串【15-30个词，多角度
 3. 信息不足、来源单一或【未覆盖角度】有失败项时，换关键词再调一次，或用 read_url 追读【候选未读】里的链接
 4. 注意信息时效，留意页面日期，旧消息别当新消息说
 
-⚠ 关键：返回内容末尾有【执行过程总结】和【页面读取统计】，显示了实际成功/失败的页面数。
+【关键】返回内容末尾有【执行过程总结】和【页面读取统计】，显示了实际成功/失败的页面数。
 如果【成功读取 0 个页面】或统计显示全部失败，则你只有搜索结果页，没有实际内容，必须换词重试或声明信息不足。
 不要基于失败的搜索结果编造答案。`,
     inputSchema: { type: "object", properties: {
