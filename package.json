@@ -1,0 +1,28 @@
+{
+  "name": "dokobot-mcp-server",
+  "version": "2.0.0",
+  "description": "Dokobot MCP server for AI agents - parallel web search with real browser",
+  "main": "dokobot-mcp.js",
+  "keywords": [
+    "mcp",
+    "dokobot",
+    "web-search",
+    "browser-automation",
+    "ai-agent",
+    "astrbot",
+    "wrapper"
+  ],
+  "author": "scp3500 (MCP wrapper for Dokobot CLI by Dokobot team)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/scp3500/dokobot-mcp-server"
+  },
+  "dependencies": {},
+  "peerDependencies": {
+    "@dokobot/cli": "^2.11.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
