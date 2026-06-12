@@ -159,7 +159,7 @@ async function deepResearch(query, keywords) {
 const tools = [
   {
     name: "quick_search",
-    description: "搜索并返回原始搜索结果页（SERP）。不会自动读取任何链接，模型自己从 SERP 中挑选感兴趣的 URL 用 read_url 追读。\n结果不满意时换关键词再搜。",
+    description: "搜索并返回原始搜索结果页（SERP）。不会自动读取任何链接，模型自己从 SERP 中挑选感兴趣的 URL 用 read_url 追读。\n\n【搜索质量守则】\n- 默认优先保质量：第一轮结果不理想时，自动换关键词再搜，不反复问用户\n- 多轮仍不佳时坦诚说明，告诉用户搜了几轮结果都不太好，问要不要继续\n- 宁可多搜几轮，不要一轮就放弃",
     inputSchema: { type: "object", properties: {
       query: { type: "string", description: "搜索关键词" },
       engine: { type: "string", enum: Object.keys(ENGINES), description: "（可选）指定引擎，默认按语言自动选" },
@@ -171,7 +171,11 @@ const tools = [
     name: "deep_research",
     description: `多引擎并行深度搜索。keywords 传 3-8 个搜索串（中英文分开），自动分配引擎并行搜。
 返回所有原始 SERP，不自动读页面，模型自己选 URL 用 read_url 追读。
-结果不理想时换词再搜，不要一次就放弃。`,
+
+【搜索质量守则】
+- 默认优先保质量：第一轮结果不理想时，自动换关键词再搜，不反复问用户
+- 多轮仍不佳时坦诚说明，告诉用户搜了几轮结果都不太好，问要不要继续
+- 宁可多搜几轮，不要一轮就放弃`,
     inputSchema: { type: "object", properties: {
       query: { type: "string", description: "用户原始问题" },
       keywords: { type: "array", items: { type: "string" }, description: "搜索串列表，3-8个，多角度中英分开" }
