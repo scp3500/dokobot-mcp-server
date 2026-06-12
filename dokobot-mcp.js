@@ -159,7 +159,8 @@ async function deepResearch(query, keywords) {
 const tools = [
   {
     name: "quick_search",
-    description: "搜索并返回原始搜索结果页（SERP）。不会自动读取任何链接，模型自己从 SERP 中挑选感兴趣的 URL 用 read_url 追读。\n\n【搜索质量守则】\n- 默认优先保质量：第一轮结果不理想时，自动换关键词再搜，不反复问用户\n- 多轮仍不佳时坦诚说明，告诉用户搜了几轮结果都不太好，问要不要继续\n- 宁可多搜几轮，不要一轮就放弃",
+    description: "搜索并返回原始搜索结果页（SERP）。不会自动读取任何链接，模型自己从 SERP 中挑选感兴趣的 URL 用 read_url 追读。\n\n【搜索质量守则】\n- 默认优先保质量：第一轮结果不理想时，自动换关键词再搜，不反复问用户\n- 多轮仍不佳时坦诚说明，告诉用户搜了几轮结果都不太好，问要不要继续\n- 宁可多搜几轮，不要一轮就放弃
+- 回答时用纯文本简单说明搜索情况，不用 Markdown 格式（不用 ** 、不用标题、不用列表）",
     inputSchema: { type: "object", properties: {
       query: { type: "string", description: "搜索关键词" },
       engine: { type: "string", enum: Object.keys(ENGINES), description: "（可选）指定引擎，默认按语言自动选" },
@@ -176,7 +177,8 @@ const tools = [
 - 拿到 SERP 后先判断每条结果是否切题，明显跑偏的串直接换词重搜
 - 默认优先保质量：第一轮结果不理想时，自动换关键词再搜，不反复问用户
 - 多轮仍不佳时坦诚说明，告诉用户搜了几轮结果都不太好，问要不要继续
-- 宁可多搜几轮，不要一轮就放弃`,
+- 宁可多搜几轮，不要一轮就放弃
+- 回答时用纯文本简单说明搜索情况，不用 Markdown 格式（不用 ** 、不用标题、不用列表）`,
     inputSchema: { type: "object", properties: {
       query: { type: "string", description: "用户原始问题" },
       keywords: { type: "array", items: { type: "string" }, description: "搜索串列表，3-8个，多角度中英分开" }
