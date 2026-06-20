@@ -1,14 +1,32 @@
 // dokobot-mcp v3.0 — 纯搜索：返回原始 SERP，模型自己选链接用 read_url 追读
 const { execFile, exec } = require('child_process');
 const fs = require('fs');
+const path = require('path');
 const readline = require('readline');
 
 const log = (tag, msg) => process.stderr.write(`[MCP|${tag}] ${msg}\n`);
 
-const NPM_DIR = 'C:\\Users\\33795\\AppData\\Roaming\\npm';
-const CLI_JS = NPM_DIR + '\\node_modules\\@dokobot\\cli\\dist\\cli\\bin\\dokobot.js';
-const HAS_CLI_JS = fs.existsSync(CLI_JS);
-const ENV = { ...process.env, PATH: process.env.PATH + ';' + NPM_DIR };
+// 跨平台查找 dokobot CLI
+function findDokobotCli() {
+  try {
+    const npmRoot = require('child_process').execSync(
+      process.platform === 'win32' ? 'npm.cmd root -g' : 'npm root -g',
+      { encoding: 'utf-8', timeout: 5000 }
+    ).trim();
+    const candidate = path.join(npmRoot, '@dokobot', 'cli', 'dist', 'cli', 'bin', 'dokobot.js');
+    if (fs.existsSync(candidate)) return { js: candidate, dir: npmRoot };
+  } catch {}
+  return { js: null, dir: null };
+}
+
+const cliInfo = findDokobotCli();
+const CLI_JS = cliInfo.js;
+const HAS_CLI_JS = !!CLI_JS;
+const NPM_DIR = cliInfo.dir || '';
+const PATH_SEP = process.platform === 'win32' ? ';' : ':';
+const ENV = NPM_DIR
+  ? { ...process.env, PATH: process.env.PATH + PATH_SEP + NPM_DIR }
+  : process.env;
 
 const ENGINES = {
   google: q => `https://www.google.com/search?q=${encodeURIComponent(q)}`,
@@ -71,8 +89,9 @@ function dokoExec(args, timeoutMs) {
     if (HAS_CLI_JS) {
       execFile(process.execPath, [CLI_JS, ...args], opts, cb);
     } else {
-      const quoted = args.map(a => `"${String(a).replace(/"/g, '%22')}"`).join(' ');
-      exec(`dokobot ${quoted}`, opts, cb);
+      // 跨平台：从 PATH 找 dokobot 直接 execFile，避开设法问题
+      const dokobotCmd = process.platform === 'win32' ? 'dokobot.cmd' : 'dokobot';
+      execFile(dokobotCmd, args, opts, cb);
     }
   });
 }
